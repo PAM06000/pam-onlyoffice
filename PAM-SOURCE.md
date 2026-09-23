@@ -16,6 +16,7 @@ pam modifications:
 - Standalone downloads use the exact locally hosted official package.
 - The explicitly selected AI release remains visible in the catalogue.
 - Publisher metadata is provided by the catalogue without changing the plugin package.
+- Store scripts, styles and catalogue requests use versioned URLs to avoid stale caches.
 - Indexing is discouraged with robots.txt and noindex metadata.
 
 AI 3.2.2 is extracted byte-for-byte from the unmodified official ai.plugin package.

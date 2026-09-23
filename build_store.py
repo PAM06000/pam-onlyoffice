@@ -5,6 +5,7 @@ import hashlib
 import io
 import json
 import os
+import re
 from pathlib import Path, PurePosixPath
 import shutil
 import urllib.request
@@ -17,6 +18,7 @@ AI_ARCHIVE = "sdkjs-plugins/content/ai/deploy/ai.plugin"
 
 
 def build(cache=None):
+    revision = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()[:12]
     output = ROOT / "_site"
     if output.exists():
         shutil.rmtree(output)
@@ -92,6 +94,7 @@ def build(cache=None):
     store_patches = [
         ("MarketplaceStorage.excludeAiPluginIfNeeded();", "// pam: retain the AI release explicitly selected in this catalogue."),
         ("config.url = confUrl;", "config.offered = config.offered || plugin.offered;\n\t\t\t\t\tconfig.url = confUrl;"),
+        ("DataFetcher.makeRequest(configUrl, 'GET', null, null)", f"DataFetcher.makeRequest(configUrl + '?v={revision}', 'GET', null, null)"),
     ]
     for old, new in store_patches:
         if source.count(old) != 1:
@@ -104,6 +107,18 @@ def build(cache=None):
     (output / "index.html").write_text('<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>pam · ONLYOFFICE</title><meta name="robots" content="noindex,nofollow"><meta http-equiv="refresh" content="0;url=store/index.html"></head><body><a href="store/index.html">Ouvrir le catalogue pam</a></body></html>\n')
     (output / "robots.txt").write_text("User-agent: *\nDisallow: /\n")
     (output / ".nojekyll").touch()
+
+    # GitHub Pages caches static URLs for ten minutes. Content hashes prevent a
+    # newly loaded HTML page from mixing old scripts with the new catalogue.
+    for html in (output / "store").rglob("*.html"):
+        def version_asset(match):
+            attr, relative = match.groups()
+            asset = html.parent / relative
+            if asset.suffix not in (".js", ".css") or not asset.is_file():
+                return match.group(0)
+            digest = hashlib.sha256(asset.read_bytes()).hexdigest()[:12]
+            return f'{attr}="{relative}?v={digest}"'
+        html.write_text(re.sub(r'(src|href)="([^"?:]+)"', version_asset, html.read_text()))
     config = json.loads((plugin_root / "config.json").read_text())
     print(f"Built pam with AI {config['version']}; SHA-256 {AI_SHA256}")
     print(f"Static files: {output}")
