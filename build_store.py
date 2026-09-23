@@ -55,7 +55,7 @@ def build(cache=None):
 
     # The official plugin's relative SDK references require this second location.
     shutil.copytree(output / "sdkjs-plugins/v1", output / "sdkjs-plugins/content/v1")
-    (output / "store/config.json").write_text('[\n  {"name": "ai"}\n]\n')
+    (output / "store/config.json").write_text('[\n  {"name": "ai", "offered": "Ascensio System SIA"}\n]\n')
 
     for html in (output / "store").rglob("*.html"):
         sdk_path = Path(os.path.relpath(output / "sdkjs-plugins/v1", html.parent)).as_posix()
@@ -84,6 +84,20 @@ def build(cache=None):
         if source.count(old) != 1:
             raise ValueError(f"Unexpected upstream source: {relative}")
         target.write_text(source.replace(old, new, 1))
+
+    # Keep the explicitly selected AI release visible. The upstream store hides
+    # this GUID after AI was integrated into newer editors, including in browsers.
+    code = output / "store/scripts/code.js"
+    source = code.read_text()
+    store_patches = [
+        ("MarketplaceStorage.excludeAiPluginIfNeeded();", "// pam: retain the AI release explicitly selected in this catalogue."),
+        ("config.url = confUrl;", "config.offered = config.offered || plugin.offered;\n\t\t\t\t\tconfig.url = confUrl;"),
+    ]
+    for old, new in store_patches:
+        if source.count(old) != 1:
+            raise ValueError(f"Unexpected marketplace source: {old}")
+        source = source.replace(old, new, 1)
+    code.write_text(source)
 
     shutil.copyfile(ROOT / "favicon.svg", output / "favicon.svg")
     shutil.copyfile(ROOT / "PAM-SOURCE.md", output / "store/PAM-SOURCE.md")

@@ -14,7 +14,9 @@ pam modifications:
 - The document title and sidebar identify the catalogue as pam.
 - Store UI dependencies and connectivity checks use this host.
 - Standalone downloads use the exact locally hosted official package.
-- Indexing is discouraged with robots.txt and noindex headers/metadata.
+- The explicitly selected AI release remains visible in the catalogue.
+- Publisher metadata is provided by the catalogue without changing the plugin package.
+- Indexing is discouraged with robots.txt and noindex metadata.
 
 AI 3.2.2 is extracted byte-for-byte from the unmodified official ai.plugin package.
 Source: https://raw.githubusercontent.com/ONLYOFFICE/onlyoffice.github.io/master/sdkjs-plugins/content/ai/deploy/ai.plugin
